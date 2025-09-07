@@ -21,4 +21,4 @@ matrev@matrev:~$ python3 main.py /mnt/c/path/to/unorganized/photos /mnt/c/path/t
 Additionally, this script uses the tkintker package to offer a GUI if you prefer to choose the origin/destination paths that way.
 
 ## Dev Notes
-- Insure you have the tkintker packages installed on your machine before running this. 
+- Ensure you have the tkintker packages installed on your machine before running this. You might need to reinstall python after doing so to get the tkinter dependencies.
