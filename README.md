@@ -15,7 +15,7 @@ YEAR
 You can run the python script with the output/input directories in the CLI arguments if you prefer that method. 
 
 ```bash
-matrev@matrev:~$ python3 main.py /mnt/c/path/to/unorganized/photos /mnt/c/path/to/desination
+matrev@matrev:~$ python3 src/__init__.py /mnt/c/path/to/unorganized/photos /mnt/c/path/to/desination
 ```
 
 Additionally, this script uses the tkintker package to offer a GUI if you prefer to choose the origin/destination paths that way.
