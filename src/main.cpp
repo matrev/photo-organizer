@@ -1,0 +1,44 @@
+#include <iostream>
+#include <filesystem>
+#include <vector>
+
+// using namespace std; // Avoid using namespace std globally
+using std::cout;
+using std::cerr;
+using std::vector;
+
+
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        cout << "Usage: " << argv[0] << " <source_file> <destination_file>\n";
+        return 1;
+    }
+
+    std::filesystem::path src = argv[1];
+    std::filesystem::path dest = argv[2];
+
+    if (!std::filesystem::exists(src) || !std::filesystem::is_directory(src)) {
+        cerr << "Source directory " << src << " does not exist or is not a directory.\n";
+        return 1;
+    }
+
+    // gather all regular files recursively
+    vector<std::filesystem::path> files;
+    for(auto const& entry : std::filesystem::recursive_directory_iterator(src)) {
+        if(entry.is_regular_file())
+            files.emplace_back(entry.path());
+    }
+
+    std::cout << "Found " << files.size() << " files - starting move...\n";
+
+    std::for_each(
+        execution::par_unseq,
+        files.begin(),
+        files.end(), 
+        [&](const filesystem::path& p){
+            po::moveFile(p, dest);
+    });
+
+    cout << "Done.\n";
+    return 0;
+}
