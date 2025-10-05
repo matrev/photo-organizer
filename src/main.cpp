@@ -1,11 +1,17 @@
+#include "mover.hpp"
 #include <iostream>
 #include <filesystem>
 #include <vector>
+#if defined(_WIN32)
+    #include <execution>
+    #include <algorithm>
+#else
+    #include <execution>
+    #include <algorithm>
+#endif
 
-// using namespace std; // Avoid using namespace std globally
-using std::cout;
-using std::cerr;
-using std::vector;
+
+using namespace std; // Avoid using namespace std globally
 
 
 int main(int argc, char* argv[]) {
@@ -29,14 +35,14 @@ int main(int argc, char* argv[]) {
             files.emplace_back(entry.path());
     }
 
-    std::cout << "Found " << files.size() << " files - starting move...\n";
+    cout << "Found " << files.size() << " files - starting move...\n";
 
     std::for_each(
-        execution::par_unseq,
+        std::execution::par_unseq,
         files.begin(),
         files.end(), 
-        [&](const filesystem::path& p){
-            po::moveFile(p, dest);
+        [&](const std::filesystem::path& p){
+            photoorganizer::moveFile(p, dest);
     });
 
     cout << "Done.\n";

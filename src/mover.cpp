@@ -1,3 +1,4 @@
+#include "mover.hpp"
 #include <exiv2/exiv2.hpp>
 #include <fstream>
 #include <iostream>
@@ -36,5 +37,58 @@ namespace photoorganizer {
         std::time_t tt = decltype(ft)::clock::to_time_t(ft);
         std::tm tm = *std::localtime(&tt);
         return {tm.tm_year + 1900, tm.tm_mon + 1};
+    }
+
+    void moveFile(const std::filesystem::path& src,
+              const std::filesystem::path& dstRoot)
+    {
+        auto [yr, mo] = getYearMonth(src);
+        std::filesystem::path dstDir = dstRoot /
+                                    std::to_string(yr) /
+                                    (mo < 10 ? "0"+std::to_string(mo)
+                                                : std::to_string(mo));
+        std::error_code ec;
+        std::filesystem::create_directories(dstDir, ec);
+        if (ec) {
+            std::cerr << "Failed to create dir " << dstDir << ": " << ec.message() << "\n";
+            return;
+        }
+
+        std::filesystem::path dst = dstDir / src.filename();
+
+        // 1️⃣ Try a pure rename – works when src & dst are on the same volume
+        std::filesystem::rename(src, dst, ec);
+        if (!ec) return;   // success!
+
+        // 2️⃣ Cross‑volume copy – use platform‑specific fast path
+    #if defined(_WIN32)
+        // Windows: CopyFileEx with NO_BUFFERING flag
+        BOOL ok = CopyFileExW(src.c_str(), dst.c_str(),
+                            nullptr, nullptr, FALSE,
+                            COPY_FILE_NO_BUFFERING);
+        if (ok) std::filesystem::remove(src, ec);
+        if (!ok) std::cerr << "Copy failed for " << src << "\n";
+    #else
+        // POSIX: sendfile loop (1 MiB chunks)
+        int in  = ::open(src.c_str(), O_RDONLY);
+        int out = ::open(dst.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (in < 0 || out < 0) {
+            std::cerr << "Open failure for " << src << "\n";
+            if (in >= 0) ::close(in);
+            if (out >= 0) ::close(out);
+            return;
+        }
+
+        struct stat st{};
+        fstat(in, &st);
+        off_t offset = 0;
+        while (offset < st.st_size) {
+            ssize_t sent = ::sendfile(out, in, &offset, BUFFER_SIZE);
+            if (sent <= 0) break;   // error or EOF
+        }
+        ::close(in);
+        ::close(out);
+        std::filesystem::remove(src, ec);
+    #endif
     }
 }
