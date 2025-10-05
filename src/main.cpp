@@ -11,12 +11,11 @@
 #endif
 
 
-using namespace std; // Avoid using namespace std globally
 
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        cout << "Usage: " << argv[0] << " <source_file> <destination_file>\n";
+        std::cout << "Usage: " << argv[0] << " <source_file> <destination_file>\n";
         return 1;
     }
 
@@ -24,7 +23,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::path dest = argv[2];
 
     if (!std::filesystem::exists(src) || !std::filesystem::is_directory(src)) {
-        cerr << "Source directory " << src << " does not exist or is not a directory.\n";
+        std::cerr << "Source directory " << src << " does not exist or is not a directory.\n";
         return 1;
     }
 
@@ -35,7 +34,7 @@ int main(int argc, char* argv[]) {
             files.emplace_back(entry.path());
     }
 
-    cout << "Found " << files.size() << " files - starting move...\n";
+    std::cout << "Found " << files.size() << " files - starting move...\n";
 
     std::for_each(
         std::execution::par_unseq,
