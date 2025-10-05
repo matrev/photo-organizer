@@ -1,1 +1,0 @@
-/usr/bin/c++  -O3 -DNDEBUG   CMakeFiles/PhotoOrganizer.dir/src/main.cpp.o CMakeFiles/PhotoOrganizer.dir/src/mover.cpp.o  -o PhotoOrganizer  -lexiv2::exiv2 

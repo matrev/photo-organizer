@@ -1,9 +1,0 @@
-/home/matrev/photo-organizer/CMakeFiles/install/strip.dir
-/home/matrev/photo-organizer/CMakeFiles/install/local.dir
-/home/matrev/photo-organizer/CMakeFiles/edit_cache.dir
-/home/matrev/photo-organizer/CMakeFiles/install.dir
-/home/matrev/photo-organizer/CMakeFiles/list_install_components.dir
-/home/matrev/photo-organizer/CMakeFiles/rebuild_cache.dir
-/home/matrev/photo-organizer/CMakeFiles/package.dir
-/home/matrev/photo-organizer/CMakeFiles/package_source.dir
-/home/matrev/photo-organizer/CMakeFiles/PhotoOrganizer.dir

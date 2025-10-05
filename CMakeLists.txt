@@ -11,7 +11,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)   # useful for shared libs later
 # Find external libraries -------------------------------------------------
 # Exiv2 (EXIF handling) – installed via package manager or vcpkg
 find_package(exiv2 REQUIRED)
-
 # -------------------------------------------------
 # Include our own headers
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -27,11 +26,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/external   # taskflow.hpp lives here
 )
 
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        exiv2::exiv2
-)
-
 # -------------------------------------------------
 # Install rules (used by CPack)
 install(TARGETS ${PROJECT_NAME}
@@ -39,7 +33,7 @@ install(TARGETS ${PROJECT_NAME}
 
 # -------------------------------------------------
 # Packaging with CPack -------------------------------------------------
-include(InstallRequiredSystemLibraries)
+# include(InstallRequiredSystemLibraries)
 
 set(CPACK_PACKAGE_NAME "PhotoOrganizer")
 set(CPACK_PACKAGE_VENDOR "MarkTrevino")
