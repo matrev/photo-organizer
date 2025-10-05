@@ -6,11 +6,13 @@ project(PhotoOrganizer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)   # useful for shared libs later
+set(GCC_COVERAGE_LINK_FLAGS    "-lexiv2 -ltbb") # Linker flags
 
 # -------------------------------------------------
-# Find external libraries -------------------------------------------------
+# Find external libraries -------------------------------------------------`
 # Exiv2 (EXIF handling) – installed via package manager or vcpkg
 find_package(exiv2 REQUIRED)
+find_package(TBB REQUIRED)
 # -------------------------------------------------
 # Include our own headers
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -21,6 +23,15 @@ add_executable(${PROJECT_NAME}
     src/main.cpp
     src/mover.cpp
 )
+
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE
+        exiv2
+        TBB::tbb
+)
+# target_link_libraries(${PROJECT_NAME} exiv2::exiv2)
+# add_library(exiv2::exiv2) # To silence CMake warnings
+# set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${GCC_COVERAGE_LINK_FLAGS}")
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${PROJECT_SOURCE_DIR}/external   # taskflow.hpp lives here
@@ -33,7 +44,7 @@ install(TARGETS ${PROJECT_NAME}
 
 # -------------------------------------------------
 # Packaging with CPack -------------------------------------------------
-# include(InstallRequiredSystemLibraries)
+include(InstallRequiredSystemLibraries)
 
 set(CPACK_PACKAGE_NAME "PhotoOrganizer")
 set(CPACK_PACKAGE_VENDOR "MarkTrevino")
