@@ -3,6 +3,9 @@
 #include <fstream>
 #include <iostream>
 #include <system_error>
+#include <chrono>
+#include <ctime>
+#include <sys/stat.h>
 
 #if defined(_WIN32)
     #include <windows.h>
@@ -13,14 +16,14 @@
 #endif
 
 namespace photoorganizer {
-    static constexpr size_t BUFFER_SIZSE = 1 << 20;// 16 * 1024 * 1024; // 16MB buffer size
+    static constexpr size_t BUFFER_SIZE = 1 << 20;// 16 * 1024 * 1024; // 16MB buffer size
 
-    pari<int, int> getYearMonth(const filesystem::path& file) {
+    pair<int, int> getYearMonth(const filesystem::path& file) {
         try {
             auto img = Exiv2::ImageFactory::open(file.string());
             img->readMetadata();
-            const Exiv2::ExifData& exif = img->exifData();
-            const auto dt = exif["Exif.photo.DateTimeOriginal"]; // "2023:10:05 14:23:11"
+            Exiv2::ExifData& exif = img->exifData();
+            auto dt = exif["Exif.photo.DateTimeOriginal"]; // "2023:10:05 14:23:11"
             if (!dt.toString().empty()) {
                 std::string s = dt.toString();
                 int y = std::stoi(s.substr(0,4));
@@ -34,7 +37,10 @@ namespace photoorganizer {
 
         // Fallback: use last write time
         auto ft = std::filesystem::last_write_time(file);
-        std::time_t tt = decltype(ft)::clock::to_time_t(ft);
+        auto system_time_point = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+        ft - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now()
+        );
+        std::time_t tt = std::chrono::system_clock::to_time_t(system_time_point);
         std::tm tm = *std::localtime(&tt);
         return {tm.tm_year + 1900, tm.tm_mon + 1};
     }

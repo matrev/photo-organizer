@@ -10,7 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)   # useful for shared libs later
 # -------------------------------------------------
 # Find external libraries -------------------------------------------------
 # Exiv2 (EXIF handling) – installed via package manager or vcpkg
-find_package(Exiv2 REQUIRED)
+find_package(exiv2 REQUIRED)
 
 # -------------------------------------------------
 # Include our own headers
@@ -29,7 +29,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-        Exiv2::exiv2
+        exiv2::exiv2
 )
 
 # -------------------------------------------------
