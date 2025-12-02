@@ -1,18 +1,32 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.22)
 project(PhotoOrganizer LANGUAGES CXX)
 
 # -------------------------------------------------
 # Global settings
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)   # useful for shared libs later
 set(GCC_COVERAGE_LINK_FLAGS    "-lexiv2 -ltbb") # Linker flags
+# set(GCC_COVERAGE_LINK_FLAGS    "-lexiv2 -ltbb") # Linker flags
 
 # -------------------------------------------------
 # Find external libraries -------------------------------------------------`
 # Exiv2 (EXIF handling) – installed via package manager or vcpkg
 find_package(exiv2 REQUIRED)
 find_package(TBB REQUIRED)
+
+# Prefer system Qt6 if available, otherwise fall back to Qt5 (distro packages).
+find_package(Qt6 COMPONENTS Widgets QUIET)
+if (Qt6_FOUND)
+    message(STATUS "Found Qt6: ${Qt6_VERSION}")
+    set(QT_WIDGETS_TARGET Qt6::Widgets)
+else()
+    find_package(Qt5 COMPONENTS Widgets REQUIRED)
+    message(STATUS "Using Qt5 from system packages")
+    set(QT_WIDGETS_TARGET Qt5::Widgets)
+endif()
+
 # -------------------------------------------------
 # Include our own headers
 include_directories(${PROJECT_SOURCE_DIR}/include)
@@ -20,22 +34,24 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # -------------------------------------------------
 # Add the executable
 add_executable(${PROJECT_NAME}
-    src/main.cpp
-    src/mover.cpp
+    src/Main.cpp
+    src/Mover.cpp
+    gui/MainWindow.cpp
 )
 
-target_link_libraries(${PROJECT_NAME} 
+target_link_libraries(${PROJECT_NAME}
     PRIVATE
         exiv2
         TBB::tbb
+        ${QT_WIDGETS_TARGET}
+        pthread
+        dl
+        rt
 )
-# target_link_libraries(${PROJECT_NAME} exiv2::exiv2)
-# add_library(exiv2::exiv2) # To silence CMake warnings
-# set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "${GCC_COVERAGE_LINK_FLAGS}")
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${PROJECT_SOURCE_DIR}/external   # taskflow.hpp lives here
-)
+# -------------------------------------------------
+# target_include_directories(${PROJECT_NAME} PRIVATE
+#     ${PROJECT_SOURCE_DIR}/external   # taskflow.hpp lives here
+# )
 
 # -------------------------------------------------
 # Install rules (used by CPack)
