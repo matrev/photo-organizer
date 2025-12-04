@@ -37,6 +37,7 @@ add_executable(${PROJECT_NAME}
     src/Main.cpp
     src/Mover.cpp
     gui/MainWindow.cpp
+    gui/FileInput.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}

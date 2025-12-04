@@ -1,8 +1,10 @@
 #ifndef MAINWINDOW_HPP
 #define MAINWINDOW_HPP
 
+#include "FileInput.hpp"
 #include <QMainWindow>
 #include <QProgressBar>
+#include <QLabel>
 
 
 class MainWindow : public QMainWindow {
@@ -19,10 +21,11 @@ class MainWindow : public QMainWindow {
         void startWork();
 
     private:
-        QProgressBar *progressBar{nullptr};
-        QString sourcePath;
+        QProgressBar *progressBar;
+        
+        FileInput sourceInput;
 
-        QString destinationPath;
+        FileInput destinationInput;
 };
 
 #endif // MAINWINDOW_HPP
