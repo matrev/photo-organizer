@@ -28,7 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private string? _errorMessage;
 
     [ObservableProperty]
-    private string _fileCountDisplay;
+    private string? _fileCountDisplay;
 
     [ObservableProperty]
     private double _progressPercentage;

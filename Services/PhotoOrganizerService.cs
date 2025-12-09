@@ -79,6 +79,7 @@ public class PhotoOrganizerService : IPhotoOrganizerService
                 Console.WriteLine($"Moved file: {file.Name} | Date Taken: {dateTime} | Year: {year} | Month: {month}");
                 return true;
             } catch (Exception ex) {
+                Console.WriteLine($"Failed to move file: {file.Name}. Error: {ex.Message}");
                 return false;
             } finally {
                 onCompleted?.Invoke();
