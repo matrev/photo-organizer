@@ -1,11 +1,4 @@
-.python-version
-__pycache__/
-.pytest_cache
+bin
 
-Makefile
-/cmake_install.cmake
-CMakeFiles/*
-/CMakeCache.txt
-build/
-CPackConfig.cmake
-CPackSourceConfig.cmake
+obj
+.fake
