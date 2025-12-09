@@ -22,6 +22,12 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"/>
         </Border>
-        <Button HorizontalAlignment="Center" Command="{Binding OpenFileCommand}">Browse</Button>
+        <!-- <TextBlock HorizontalAlignment="Center" Margin="10" Text="Select a folder to organize photos:"/> -->
+        <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding SourceFolderPath}"/>
+        <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}"  CommandParameter="source">Browse Source</Button>
+        
+        <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding DestinationFolderPath}" Margin="10,20,10,0"/>
+        <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}" CommandParameter="destination">Browse Destination</Button>
+        <Button HorizontalAlignment="Center" Margin="0,20,0,0" Command="{Binding OrganizePhotosCommand}">Organize Photos</Button>
     </StackPanel>
 </Window>
