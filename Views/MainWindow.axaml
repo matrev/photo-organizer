@@ -15,19 +15,28 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
     <StackPanel>
-        <Border Margin="5" CornerRadius="10" Background="LightBlue">
-            <TextBlock Text="{Binding Greeting}"
-                Margin="5"
-                FontSize="24"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"/>
-        </Border>
         <!-- <TextBlock HorizontalAlignment="Center" Margin="10" Text="Select a folder to organize photos:"/> -->
         <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding SourceFolderPath}"/>
         <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}"  CommandParameter="source">Browse Source</Button>
         
         <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding DestinationFolderPath}" Margin="10,20,10,0"/>
         <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}" CommandParameter="destination">Browse Destination</Button>
-        <Button HorizontalAlignment="Center" Margin="0,20,0,0" Command="{Binding OrganizePhotosCommand}">Organize Photos</Button>
+        <TextBlock 
+            Width="400"
+            HorizontalAlignment="Center"
+            Text="{Binding ErrorMessage}"
+            Margin="0,10,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            Foreground="Red"
+            FontWeight="Bold"/>
+        <TextBlock
+            Width="400"
+            HorizontalAlignment="Center"
+            Text="{Binding StatusMessage}"
+            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+            Margin="0,10,0,0"
+            Foreground="Green"
+            FontWeight="Bold"/>
+        <Button HorizontalAlignment="Center" Margin="0,20,0,0" Command="{Binding OrganizePhotosCommand}" IsEnabled="{Binding !IsOrganizing}">Organize Photos</Button>
     </StackPanel>
 </Window>

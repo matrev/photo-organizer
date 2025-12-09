@@ -41,8 +41,8 @@ public partial class App : Application
 
             var mainWindow = serviceProvider.GetRequiredService<MainWindow>();
             mainWindow.DataContext = new MainWindowViewModel(
-                serviceProvider.GetRequiredService<IPhotoOrganizerService>(),
-                serviceProvider.GetRequiredService<IFolderService>());
+                serviceProvider.GetRequiredService<IFolderService>(),
+                serviceProvider.GetRequiredService<IPhotoOrganizerService>());
 
             desktop.MainWindow = mainWindow;
             Services = serviceProvider;

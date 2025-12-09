@@ -1,17 +1,15 @@
-﻿using System.Threading.Tasks;
-using photo_organizer.Services;
-using CommunityToolkit.Mvvm.Input;
+﻿using System;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Mvvm.Input;
+using photo_organizer.Services;
 
 namespace photo_organizer.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly IPhotoOrganizerService _photoOrganizerService;
     private readonly IFolderService _folderService;
-    public string Greeting { get; } = "Welcome to Avalonia!";
+    private readonly IPhotoOrganizerService _photoOrganizerService;
 
     [ObservableProperty]
     private string? _sourceFolderPath;
@@ -19,52 +17,103 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string? _destinationFolderPath;
 
-    public MainWindowViewModel(IPhotoOrganizerService photoOrganizerService, IFolderService folderService)
-    {
-        _photoOrganizerService = photoOrganizerService;
-        _folderService = folderService;
-    }
+    [ObservableProperty]
+    private bool _isOrganizing;
 
+    [ObservableProperty]
+    private string? _statusMessage;
+
+    [ObservableProperty]
+    private string? _errorMessage;
+
+    public MainWindowViewModel(IFolderService folderService, IPhotoOrganizerService photoOrganizerService)
+    {
+        _folderService = folderService;
+        _photoOrganizerService = photoOrganizerService;
+    }
 
     [RelayCommand]
     private async Task SelectFolder(string folderType)
     {
+        ResetMessages();
 
-        // File picker implementation can go here
         var folder = await _folderService.PickFolderAsync();
-
-        if (folder == null) return;
+        if (folder == null)
+            return;
 
         var path = folder.Path.LocalPath;
-        if(folderType == "source")
+
+        if (folderType == "source")
         {
+            if (await _folderService.IsFolderEmpty(folder))
+            {
+                ErrorMessage = "Selected source folder is empty. Please select a folder with content.";
+                return;
+            }
+
             SourceFolderPath = path;
         }
-        else if(folderType == "destination")
+        else if (folderType == "destination")
         {
             DestinationFolderPath = path;
         }
-        Console.WriteLine($"Picked folder: {folder.Path.LocalPath}");
     }
 
     [RelayCommand]
     private async Task OrganizePhotos()
     {
-        Console.WriteLine("Organizing photos...");
+        ResetMessages();
+
+        if (!ValidateFolderPaths())
+            return;
+
         try
         {
-            if(string.IsNullOrEmpty(SourceFolderPath) || string.IsNullOrEmpty(DestinationFolderPath))
-            {
-                Console.WriteLine("Source or Destination folder path is not set.");
-                return;
-            }
+            StatusMessage = "Organizing photos...";
+            IsOrganizing = true;
 
-            await _photoOrganizerService.MovePhotosAsync(SourceFolderPath, DestinationFolderPath);
+            var photosMoved = await _photoOrganizerService.MovePhotosAsync(SourceFolderPath!, DestinationFolderPath!);
+
+            StatusMessage = $"Photos organized successfully! {photosMoved} file(s) moved from {SourceFolderPath} to {DestinationFolderPath}.";
+            ClearFolderPaths();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error organizing photos: {ex.Message}");
-            throw;
+            ErrorMessage = $"Error organizing photos: {ex.Message}";
+            Console.WriteLine($"Error: {ex.Message}");
         }
+        finally
+        {
+            IsOrganizing = false;
+        }
+    }
+
+    private bool ValidateFolderPaths()
+    {
+        if (string.IsNullOrEmpty(SourceFolderPath) || string.IsNullOrEmpty(DestinationFolderPath))
+        {
+            ErrorMessage = "Both source and destination folder paths must be set.";
+            return false;
+        }
+
+        if (SourceFolderPath == DestinationFolderPath)
+        {
+            ErrorMessage = "Source and destination folders cannot be the same.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ClearFolderPaths()
+    {
+        SourceFolderPath = null;
+        DestinationFolderPath = null;
+    }
+
+    private void ResetMessages()
+    {
+        ErrorMessage = null;
+        StatusMessage = null;
     }
 }

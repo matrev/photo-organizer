@@ -4,5 +4,5 @@ namespace photo_organizer.Services;
 
 public interface IPhotoOrganizerService
 {
-    Task MovePhotosAsync(string sourcePath, string destinationPath);
+    Task<int> MovePhotosAsync(string sourcePath, string destinationPath);
 }
