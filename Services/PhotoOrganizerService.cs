@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
+using photo_organizer.Models;
 
 namespace photo_organizer.Services;
 
@@ -15,33 +16,46 @@ public class PhotoOrganizerService : IPhotoOrganizerService
         ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".heic", ".webp", ".raw"
     };
     
-    public async Task<int> MovePhotosAsync(string sourcePath, string destinationPath)
+    public async Task<int> MovePhotosAsync(string sourcePath, string rootDestinationPath, IProgress<ProgressInfo> progress)
     {
-        return await Task.Run(async () =>
+        var sourceDir = new DirectoryInfo(sourcePath);
+        var destDir = new DirectoryInfo(rootDestinationPath);
+
+        if (!sourceDir.Exists) {
+            throw new DirectoryNotFoundException($"Source directory not found: {sourcePath}");
+        }
+        
+        if (!destDir.Exists) {
+            destDir.Create();
+        }
+
+        List<FileInfo> photoFiles = sourceDir.GetFiles()
+            .Where(f => IsPhotoFile(f.Extension))
+            .ToList();
+
+        int totalFiles = photoFiles.Count;
+        int completedFiles = 0;
+        object lockObject = new();
+
+        List<Task<bool>> tasks = photoFiles.Select(file => MoveFileAsync(file, rootDestinationPath, () =>
         {
-            var sourceDir = new DirectoryInfo(sourcePath);
-            var destDir = new DirectoryInfo(destinationPath);
-
-            if (!sourceDir.Exists) {
-                throw new DirectoryNotFoundException($"Source directory not found: {sourcePath}");
+            lock (lockObject)
+            {
+                completedFiles++;
+                progress?.Report(new ProgressInfo
+                {
+                    TotalFileCount = totalFiles,
+                    MovedFileCount = completedFiles,
+                    CurrentFileName = file.Name
+                });
             }
-            
-            if (!destDir.Exists) {
-                destDir.Create();
-            }
+        })).ToList();
+        bool[] results = await Task.WhenAll(tasks);
 
-            List<FileInfo> photoFiles = sourceDir.GetFiles()
-                .Where(f => IsPhotoFile(f.Extension))
-                .ToList();
-
-            List<Task<bool>> tasks = photoFiles.Select(file => MoveFileAsync(file, destinationPath)).ToList();
-            bool[] results = await Task.WhenAll(tasks);
-
-            return results.Count(success => success);
-        });
+        return results.Count(success => success);
     }
 
-    private async Task<bool> MoveFileAsync(FileInfo file, string destinationPath) {
+    private async Task<bool> MoveFileAsync(FileInfo file, string destinationPath, Action onCompleted) {
         return await Task.Run(() => {
             //read dateTime from metadata
             IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file.FullName);
@@ -66,6 +80,8 @@ public class PhotoOrganizerService : IPhotoOrganizerService
                 return true;
             } catch (Exception ex) {
                 return false;
+            } finally {
+                onCompleted?.Invoke();
             }
         });
     }

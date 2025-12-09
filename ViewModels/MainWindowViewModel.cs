@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using photo_organizer.Models;
 using photo_organizer.Services;
 
 namespace photo_organizer.ViewModels;
@@ -25,6 +26,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string? _errorMessage;
+
+    [ObservableProperty]
+    private string _fileCountDisplay;
+
+    [ObservableProperty]
+    private double _progressPercentage;
+
+
+    [ObservableProperty]
+    private string? _currentFileName;
+
 
     public MainWindowViewModel(IFolderService folderService, IPhotoOrganizerService photoOrganizerService)
     {
@@ -63,6 +75,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private async Task OrganizePhotos()
     {
         ResetMessages();
+        var progress = new Progress<ProgressInfo>(OnProgressChanged);
 
         if (!ValidateFolderPaths())
             return;
@@ -72,7 +85,7 @@ public partial class MainWindowViewModel : ViewModelBase
             StatusMessage = "Organizing photos...";
             IsOrganizing = true;
 
-            var photosMoved = await _photoOrganizerService.MovePhotosAsync(SourceFolderPath!, DestinationFolderPath!);
+            var photosMoved = await _photoOrganizerService.MovePhotosAsync(SourceFolderPath!, DestinationFolderPath!, progress);
 
             StatusMessage = $"Photos organized successfully! {photosMoved} file(s) moved from {SourceFolderPath} to {DestinationFolderPath}.";
             ClearFolderPaths();
@@ -86,6 +99,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsOrganizing = false;
         }
+    }
+
+    private void OnProgressChanged(ProgressInfo info)
+    {
+        FileCountDisplay = $"{info.MovedFileCount} / {info.TotalFileCount} files moved";
+        CurrentFileName = info.CurrentFileName;
+        ProgressPercentage = info.ProgressPercentage;
     }
 
     private bool ValidateFolderPaths()
