@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
@@ -11,6 +13,10 @@ namespace photo_organizer.Services;
 
 public class PhotoOrganizerService : IPhotoOrganizerService 
 {
+
+    //to avoid creating same directory multiple times in concurrent environment
+    private readonly ConcurrentDictionary<string, byte> _createdDirectories = new();
+
     private readonly HashSet<string> _photoExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".heic", ".webp", ".raw"
@@ -35,47 +41,67 @@ public class PhotoOrganizerService : IPhotoOrganizerService
 
         int totalFiles = photoFiles.Count;
         int completedFiles = 0;
-        object lockObject = new();
+        object lockObject = new object();
 
-        List<Task<bool>> tasks = photoFiles.Select(file => MoveFileAsync(file, rootDestinationPath, () =>
+        const int MaxConcurrentMoves = 8;
+        using var semaphore = new SemaphoreSlim(MaxConcurrentMoves, MaxConcurrentMoves);
+
+
+
+        IEnumerable<Task<bool>> tasks = photoFiles.Select(async file => 
         {
-            lock (lockObject)
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
             {
-                completedFiles++;
-                progress?.Report(new ProgressInfo
+                bool ok = await MoveFileAsync(file, rootDestinationPath, () =>
                 {
-                    TotalFileCount = totalFiles,
-                    MovedFileCount = completedFiles,
-                    CurrentFileName = file.Name
+                    lock (lockObject)
+                    {
+                        int finished = Interlocked.Increment(ref completedFiles);
+                        progress?.Report(new ProgressInfo
+                        {
+                            TotalFileCount = totalFiles,
+                            MovedFileCount = finished,
+                            CurrentFileName = file.Name
+                        });
+                    }
+                
                 });
+                return ok;
+            } finally
+            {
+                semaphore.Release();
             }
-        })).ToList();
+            
+        });
+
         bool[] results = await Task.WhenAll(tasks);
 
         return results.Count(success => success);
     }
 
-    private async Task<bool> MoveFileAsync(FileInfo file, string destinationPath, Action onCompleted) {
+    private async Task<bool> MoveFileAsync(FileInfo file, string destinationRootPath, Action onCompleted) {
+        //read dateTime from metadata
+        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file.FullName);
+
+        // try to get DateTimeOriginal from EXIF
+        var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
+        DateTime dateTime = GetDateTaken(file.FullName);
+
+        //extract year and month
+        string year = dateTime.Year.ToString();
+        string month = dateTime.Month.ToString("D2");
+        string targetFolder = Path.Combine(destinationRootPath, year, month);
+
+        //move to year/month folder
+        _createdDirectories.GetOrAdd(targetFolder, _ => {
+            System.IO.Directory.CreateDirectory(targetFolder);
+            return 0;
+        });
+
         return await Task.Run(() => {
-            //read dateTime from metadata
-            IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file.FullName);
-
-            // try to get DateTimeOriginal from EXIF
-            var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
-            DateTime dateTime = GetDateTaken(file.FullName);
-
-            //extract year and month
-            string year = dateTime.Year.ToString();
-            string month = dateTime.Month.ToString("D2");
-
-            //move to year/month folder
-            string yearMonthPath = Path.Combine(destinationPath, year, month);
-            if (!System.IO.Directory.Exists(yearMonthPath)) {
-                System.IO.Directory.CreateDirectory(yearMonthPath);
-            }
-
             try {
-                file.MoveTo(Path.Combine(yearMonthPath, file.Name), overwrite: true);
+                file.CopyTo(Path.Combine(targetFolder, file.Name), overwrite: true);
                 Console.WriteLine($"Moved file: {file.Name} | Date Taken: {dateTime} | Year: {year} | Month: {month}");
                 return true;
             } catch (Exception ex) {
@@ -84,7 +110,7 @@ public class PhotoOrganizerService : IPhotoOrganizerService
             } finally {
                 onCompleted?.Invoke();
             }
-        });
+        }).ConfigureAwait(false);
     }
 
     //process date taken from metadata, fallback to file creation date
