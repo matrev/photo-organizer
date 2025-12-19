@@ -22,22 +22,90 @@ matrev@matrev:~$ python3 src/__init__.py /mnt/c/path/to/unorganized/photos /mnt/
 
 Additionally, this script uses the tkintker package to offer a GUI if you prefer to choose the origin/destination paths that way.
 
-## C++
-You can run the following commands to build the executable that will run the executable `PhotoOrganizer`
+## Building and Deployment
 
-```bash
-cmake -s . -b build
+This application is built with Avalonia UI and .NET, making it cross-platform compatible. You can build executables for Windows, macOS, and Linux.
+
+### Prerequisites
+
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
+- For cross-platform builds, you may need additional SDKs depending on your host platform
+
+### Quick Build Commands
+
+#### Windows (PowerShell)
+```powershell
+# Build for current platform
+dotnet publish -c Release --self-contained
+
+# Build for specific platform
+dotnet publish -c Release -r win-x64 --self-contained --output ./publish/win-x64
+dotnet publish -c Release -r linux-x64 --self-contained --output ./publish/linux-x64
+dotnet publish -c Release -r osx-x64 --self-contained --output ./publish/osx-x64
 ```
 
+#### Linux/macOS (Bash)
 ```bash
-./build/PhotoOrganizer /mnt/c/path/to/unorganized/photos /mnt/c/path/to/destination
+# Build for current platform
+dotnet publish -c Release --self-contained
+
+# Build for specific platform
+dotnet publish -c Release -r linux-x64 --self-contained --output ./publish/linux-x64
+dotnet publish -c Release -r win-x64 --self-contained --output ./publish/win-x64
+dotnet publish -c Release -r osx-arm64 --self-contained --output ./publish/osx-arm64
 ```
 
-## Dev Notes
+### Automated Build Scripts
 
-### Python
-- Ensure you have the tkintker packages installed on your machine before running this. You might need to reinstall python after doing so to get the tkinter dependencies.
+Use the provided build scripts for convenience:
 
+#### Windows
+```powershell
+# Build for all platforms
+.\build.ps1 -AllPlatforms
 
-## C++
-- Ensure you have the exiv2 and tbb packages installed
+# Build for specific platform
+.\build.ps1 -TargetRid win-x64
+
+# Build with custom output directory
+.\build.ps1 -TargetRid linux-x64 -OutputDir ./my-builds
+```
+
+#### Linux/macOS
+```bash
+# Make script executable (first time only)
+chmod +x build.sh
+
+# Build for all platforms
+./build.sh all
+
+# Build for specific platform
+./build.sh linux-x64
+
+# Build with custom output directory
+./build.sh win-x64 ./my-builds
+```
+
+### Supported Platforms
+
+The application can be built for the following platforms:
+
+- **Windows**: `win-x64`, `win-x86`, `win-arm64`
+- **macOS**: `osx-x64` (Intel), `osx-arm64` (Apple Silicon)
+- **Linux**: `linux-x64`, `linux-arm64`, `linux-musl-x64`, `linux-musl-arm64`
+
+### Distribution
+
+The built executables are self-contained and include the .NET runtime, so users don't need to install .NET separately. Each executable is typically 50-100MB in size.
+
+### System Requirements
+
+- **Windows**: Windows 10 version 1607 or later
+- **macOS**: macOS 10.12 Sierra or later
+- **Linux**: Most modern distributions (glibc or musl-based)
+
+### Troubleshooting
+
+- If builds fail, ensure you have the latest .NET SDK installed
+- For Linux builds on Windows, you may need additional components
+- Check the [Avalonia documentation](https://docs.avaloniaui.net/) for platform-specific issues
