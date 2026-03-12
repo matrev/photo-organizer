@@ -3,67 +3,144 @@
         xmlns:vm="using:photo_organizer.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="560" d:DesignHeight="560"
         x:Class="photo_organizer.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="photo_organizer">
+        Title="Photo Organizer"
+        MinWidth="480"
+        Width="560"
+        Height="560"
+        CanResize="True">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
-    <StackPanel>
-        <!-- <TextBlock HorizontalAlignment="Center" Margin="10" Text="Select a folder to organize photos:"/> -->
-        <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding SourceFolderPath}"/>
-        <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}"  CommandParameter="source">Browse Source</Button>
-        
-        <TextBlock Width="400" HorizontalAlignment="Center" Text="{Binding DestinationFolderPath}" Margin="10,20,10,0"/>
-        <Button HorizontalAlignment="Center" Command="{Binding SelectFolderCommand}" CommandParameter="destination">Browse Destination</Button>
-        <TextBlock 
-            Width="400"
-            HorizontalAlignment="Center"
-            Text="{Binding ErrorMessage}"
-            Margin="0,10,0,0"
-            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-            Foreground="Red"
-            FontWeight="Bold"/>
-        <TextBlock
-            Width="400"
-            HorizontalAlignment="Center"
-            Text="{Binding StatusMessage}"
-            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-            Margin="0,10,0,0"
-            Foreground="Green"
-            FontWeight="Bold"/>
-        <Button HorizontalAlignment="Center" Margin="0,20,0,0" Command="{Binding OrganizePhotosCommand}" IsEnabled="{Binding !IsOrganizing}">Organize Photos</Button>
-        
-        <TextBlock
-            Width="400"
-            HorizontalAlignment="Center"
-            Text="{Binding FileCountDisplay}"
-            IsVisible="{Binding IsOrganizing}"
-            Foreground="Gray"
-            Margin="0,10,0,0"/>
-        
-        <TextBlock
-            Width="400"
-            HorizontalAlignment="Center"
-            Text="{Binding CurrentFileName}"
-            IsVisible="{Binding IsOrganizing}"
-            Foreground="Gray"
-            Margin="0,10,0,0"/>
 
-        <ProgressBar 
-            Width="400" 
-            Height="20" 
-            HorizontalAlignment="Center" 
-            Margin="0,20,0,0" 
-            Minimum="0" 
-            Maximum="100" 
-            Value="{Binding ProgressPercentage}" 
-            IsVisible="{Binding IsOrganizing}"/>
+    <ScrollViewer Padding="28,24,28,28">
+        <StackPanel Spacing="16">
 
-    </StackPanel>
+            <!-- Header -->
+            <StackPanel Spacing="4" Margin="0,0,0,8">
+                <TextBlock Text="Photo Organizer"
+                           FontSize="24"
+                           FontWeight="Bold"/>
+                <TextBlock Text="Sort your photos into year/month folders automatically"
+                           FontSize="13"
+                           Opacity="0.6"/>
+            </StackPanel>
+
+            <!-- Source Folder -->
+            <Border BorderBrush="#30808080"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="SOURCE FOLDER"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Opacity="0.55"/>
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <TextBox Grid.Column="0"
+                                 IsReadOnly="True"
+                                 Watermark="No folder selected…"
+                                 Text="{Binding SourceFolderPath}"/>
+                        <Button Grid.Column="2"
+                                Command="{Binding SelectFolderCommand}"
+                                CommandParameter="source"
+                                Padding="14,6">Browse</Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Destination Folder -->
+            <Border BorderBrush="#30808080"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="DESTINATION FOLDER"
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Opacity="0.55"/>
+                    <Grid ColumnDefinitions="*,8,Auto">
+                        <TextBox Grid.Column="0"
+                                 IsReadOnly="True"
+                                 Watermark="No folder selected…"
+                                 Text="{Binding DestinationFolderPath}"/>
+                        <Button Grid.Column="2"
+                                Command="{Binding SelectFolderCommand}"
+                                CommandParameter="destination"
+                                Padding="14,6">Browse</Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Error Message -->
+            <Border Background="#18E53935"
+                    BorderBrush="#E53935"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="14,10"
+                    IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding ErrorMessage}"
+                           Foreground="#C62828"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Status Message -->
+            <Border Background="#1843A047"
+                    BorderBrush="#43A047"
+                    BorderThickness="1"
+                    CornerRadius="6"
+                    Padding="14,10"
+                    IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="#2E7D32"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"/>
+            </Border>
+
+            <!-- Progress -->
+            <Border BorderBrush="#30808080"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="16"
+                    IsVisible="{Binding IsOrganizing}">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="Processing files…"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding FileCountDisplay}"
+                                   FontSize="12"
+                                   Opacity="0.6"/>
+                    </Grid>
+                    <ProgressBar Value="{Binding ProgressPercentage}"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Height="6"/>
+                    <TextBlock Text="{Binding CurrentFileName}"
+                               FontSize="11"
+                               Opacity="0.6"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Organize Button -->
+            <Button HorizontalAlignment="Right"
+                    Classes="accent"
+                    Command="{Binding OrganizePhotosCommand}"
+                    IsEnabled="{Binding !IsOrganizing}"
+                    Padding="22,9"
+                    FontSize="14">
+                Organize Photos
+            </Button>
+
+        </StackPanel>
+    </ScrollViewer>
 </Window>
