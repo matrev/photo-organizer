@@ -41,76 +41,66 @@ public class PhotoOrganizerService : IPhotoOrganizerService
 
         int totalFiles = photoFiles.Count;
         int completedFiles = 0;
-        object lockObject = new object();
 
         const int MaxConcurrentMoves = 8;
         using var semaphore = new SemaphoreSlim(MaxConcurrentMoves, MaxConcurrentMoves);
-
-
 
         IEnumerable<Task<bool>> tasks = photoFiles.Select(async file => 
         {
             await semaphore.WaitAsync().ConfigureAwait(false);
             try
             {
-                bool ok = await MoveFileAsync(file, rootDestinationPath, () =>
+                bool ok = await MoveFileAsync(file, rootDestinationPath).ConfigureAwait(false);
+                int finished = Interlocked.Increment(ref completedFiles);
+                progress?.Report(new ProgressInfo
                 {
-                    lock (lockObject)
-                    {
-                        int finished = Interlocked.Increment(ref completedFiles);
-                        progress?.Report(new ProgressInfo
-                        {
-                            TotalFileCount = totalFiles,
-                            MovedFileCount = finished,
-                            CurrentFileName = file.Name
-                        });
-                    }
-                
+                    TotalFileCount = totalFiles,
+                    MovedFileCount = finished,
+                    CurrentFileName = file.Name
                 });
                 return ok;
-            } finally
+            }
+            finally
             {
                 semaphore.Release();
             }
-            
         });
 
-        bool[] results = await Task.WhenAll(tasks);
+        bool[] results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
         return results.Count(success => success);
     }
 
-    private async Task<bool> MoveFileAsync(FileInfo file, string destinationRootPath, Action onCompleted) {
-        //read dateTime from metadata
-        IEnumerable<MetadataExtractor.Directory> directories = ImageMetadataReader.ReadMetadata(file.FullName);
+    private Task<bool> MoveFileAsync(FileInfo file, string destinationRootPath)
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                DateTime dateTime = GetDateTaken(file.FullName);
 
-        // try to get DateTimeOriginal from EXIF
-        var subIfdDirectory = directories.OfType<ExifSubIfdDirectory>().FirstOrDefault();
-        DateTime dateTime = GetDateTaken(file.FullName);
+                //extract year and month
+                string year = dateTime.Year.ToString();
+                string month = dateTime.Month.ToString("D2");
+                string targetFolder = Path.Combine(destinationRootPath, year, month);
 
-        //extract year and month
-        string year = dateTime.Year.ToString();
-        string month = dateTime.Month.ToString("D2");
-        string targetFolder = Path.Combine(destinationRootPath, year, month);
+                //move to year/month folder
+                _createdDirectories.GetOrAdd(targetFolder, _ =>
+                {
+                    System.IO.Directory.CreateDirectory(targetFolder);
+                    return 0;
+                });
 
-        //move to year/month folder
-        _createdDirectories.GetOrAdd(targetFolder, _ => {
-            System.IO.Directory.CreateDirectory(targetFolder);
-            return 0;
-        });
-
-        return await Task.Run(() => {
-            try {
-                file.CopyTo(Path.Combine(targetFolder, file.Name), overwrite: true);
+                File.Move(file.FullName, Path.Combine(targetFolder, file.Name), overwrite: true);
                 Console.WriteLine($"Moved file: {file.Name} | Date Taken: {dateTime} | Year: {year} | Month: {month}");
                 return true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Console.WriteLine($"Failed to move file: {file.Name}. Error: {ex.Message}");
                 return false;
-            } finally {
-                onCompleted?.Invoke();
             }
-        }).ConfigureAwait(false);
+        });
     }
 
     //process date taken from metadata, fallback to file creation date
